@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Diet & Nutrition Tracker</title>
+  <link rel="stylesheet" href="style.css">
+ 
+</head>
+<body>
+
+<h1>🍽️ Diet & Nutrition Tracker</h1>
+
+<form id="meal-form">
+  <label for="meal">Meal:</label>
+  <select id="meal" onchange="checkCustomOption(this)">
+    <option value="Breakfast">Breakfast</option>
+    <option value="Lunch">Lunch</option>
+    <option value="Dinner">Dinner</option>
+    <option value="Snack">Snack</option>
+    <option value="Other">Other (Type manually)</option>
+  </select>
+  <input type="text" id="custom-meal" placeholder="Enter custom meal" style="display:none;">
+
+  <label for="food">Food Item:</label>
+  <select id="food" onchange="checkCustomOption(this)">
+    <option value="Rice">Rice</option>
+    <option value="Eggs">Eggs</option>
+    <option value="Chicken">Chicken</option>
+    <option value="Fruit Salad">Fruit Salad</option>
+    <option value="Other">Other (Type manually)</option>
+  </select>
+  <input type="text" id="custom-food" placeholder="Enter custom food" style="display:none;">
+
+  <input type="number" id="calories" placeholder="Calories (kcal)" required>
+  <input type="number" id="protein" placeholder="Protein (g)" required>
+  <input type="number" id="carbs" placeholder="Carbohydrates (g)" required>
+  <input type="number" id="fat" placeholder="Fat (g)" required>
+  <button type="submit">Add Meal</button>
+</form>
+
+<div class="totals">
+  <h3>Nutrition Summary</h3>
+  <div>Calories: <span id="total-calories">0</span> kcal</div>
+  <div class="bar"><span id="cal-bar" style="width: 0%"></span></div>
+
+  <div>Protein: <span id="total-protein">0</span> g</div>
+  <div class="bar"><span id="protein-bar" style="width: 0%"></span></div>
+
+  <div>Carbs: <span id="total-carbs">0</span> g</div>
+  <div class="bar"><span id="carbs-bar" style="width: 0%"></span></div>
+
+  <div>Fat: <span id="total-fat">0</span> g</div>
+  <div class="bar"><span id="fat-bar" style="width: 0%"></span></div>
+</div>
+
+<div id="log">
+  <h3 style="text-align: center;">Meal Log</h3>
+</div>
+
+<script>
+  const form = document.getElementById('meal-form');
+  const log = document.getElementById('log');
+
+  let totals = {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0
+  };
+
+  function checkCustomOption(selectElement) {
+    const isMeal = selectElement.id === "meal";
+    const customInput = isMeal ? document.getElementById("custom-meal") : document.getElementById("custom-food");
+
+    if (selectElement.value === "Other") {
+      customInput.style.display = "block";
+      customInput.required = true;
+    } else {
+      customInput.style.display = "none";
+      customInput.required = false;
+    }
+  }
+
+  function updateProgressBars() {
+    const maxCal = 2500;
+    const maxProtein = 150;
+    const maxCarbs = 300;
+    const maxFat = 70;
+
+    document.getElementById("total-calories").textContent = totals.calories;
+    document.getElementById("total-protein").textContent = totals.protein;
+    document.getElementById("total-carbs").textContent = totals.carbs;
+    document.getElementById("total-fat").textContent = totals.fat;
+
+    document.getElementById("cal-bar").style.width = Math.min((totals.calories / maxCal) * 100, 100) + "%";
+    document.getElementById("protein-bar").style.width = Math.min((totals.protein / maxProtein) * 100, 100) + "%";
+    document.getElementById("carbs-bar").style.width = Math.min((totals.carbs / maxCarbs) * 100, 100) + "%";
+    document.getElementById("fat-bar").style.width = Math.min((totals.fat / maxFat) * 100, 100) + "%";
+  }
+
+  function renderLogEntry(entry) {
+    const div = document.createElement('div');
+    div.className = 'entry';
+    div.innerHTML = `<strong>${entry.meal} - ${entry.food}</strong> | 
+      Calories: ${entry.calories} kcal | 
+      Protein: ${entry.protein}g | 
+      Carbs: ${entry.carbs}g | 
+      Fat: ${entry.fat}g`;
+    log.appendChild(div);
+  }
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+
+    const meal = form.meal.value === "Other" ? form["custom-meal"].value : form.meal.value;
+    const food = form.food.value === "Other" ? form["custom-food"].value : form.food.value;
+
+    const entry = {
+      meal: meal,
+      food: food,
+      calories: parseInt(form.calories.value),
+      protein: parseInt(form.protein.value),
+      carbs: parseInt(form.carbs.value),
+      fat: parseInt(form.fat.value)
+    };
+
+    for (const key in totals) {
+      totals[key] += entry[key];
+    }
+
+    const saved = JSON.parse(localStorage.getItem('mealLog')) || [];
+    saved.push(entry);
+    localStorage.setItem('mealLog', JSON.stringify(saved));
+
+    renderLogEntry(entry);
+    updateProgressBars();
+    form.reset();
+    document.getElementById("custom-meal").style.display = "none";
+    document.getElementById("custom-food").style.display = "none";
+  });
+
+  window.onload = () => {
+    const saved = JSON.parse(localStorage.getItem('mealLog')) || [];
+    saved.forEach(entry => {
+      renderLogEntry(entry);
+      for (const key in totals) {
+        totals[key] += entry[key];
+      }
+    });
+    updateProgressBars();
+  };
+</script>
+
+</body>
+</html>
